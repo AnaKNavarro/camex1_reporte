@@ -21,7 +21,7 @@
 })();
 
 // Location cards functionality
-(function(){
+document.addEventListener('DOMContentLoaded', function(){
   const locs=[
     {id:1,name:"Punta Arenas, Chile",lat:-53.1638,lng:-70.9171,color:"#A9CBB7",days:"Partida y regreso",desc:"Puerto base de la expedición. Postprocesamiento de muestras y coordinación logística con UMAG e INACH."},
     {id:2,name:"Pasaje de Drake",lat:-59.0,lng:-65.0,color:"#81B3D2",days:"Días 1–5 y 20–22",desc:"Travesía por las aguas más turbulentas del mundo. Regreso: tormenta con olas de 12 m durante 3 días."},
@@ -42,7 +42,10 @@
   const grid = document.getElementById('locCards');
   const toast = document.getElementById('toastMsg');
   
-  if (!grid || !toast) return;
+  if (!grid || !toast) {
+    console.error('No se encontraron los elementos necesarios: locCards o toastMsg');
+    return;
+  }
   
   let tt;
   
@@ -56,17 +59,37 @@
   
   function cp(lat,lng,name){
     var t=dec(lat,lng);
-    navigator.clipboard.writeText(t).then(function(){
-      showT(name,t);
-    }).catch(function(){
-      var a=document.createElement('textarea');
-      a.value=t;
-      document.body.appendChild(a);
-      a.select();
+    
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(t).then(function(){
+        showT(name,t);
+      }).catch(function(err){
+        console.error('Error al copiar con clipboard API:', err);
+        fallbackCopy(t, name);
+      });
+    } else {
+      fallbackCopy(t, name);
+    }
+  }
+  
+  function fallbackCopy(text, name) {
+    var a = document.createElement('textarea');
+    a.value = text;
+    a.style.position = 'fixed';
+    a.style.top = '0';
+    a.style.left = '0';
+    a.style.opacity = '0';
+    document.body.appendChild(a);
+    a.focus();
+    a.select();
+    try {
       document.execCommand('copy');
-      document.body.removeChild(a);
-      showT(name,t);
-    });
+      showT(name, text);
+    } catch(err) {
+      console.error('Error al copiar:', err);
+      alert('No se pudo copiar. Coordenadas: ' + text);
+    }
+    document.body.removeChild(a);
   }
   
   function showT(n,t){
@@ -81,7 +104,11 @@
   locs.forEach(function(l){
     var c=document.createElement('div');
     c.className='loc-card-item';
-    c.onclick=function(){cp(l.lat,l.lng,l.name)};
+    c.onclick=function(e){
+      e.preventDefault();
+      cp(l.lat,l.lng,l.name);
+    };
+    c.style.cursor = 'pointer';
     c.innerHTML='<div class="loc-card-num" style="background:'+l.color+'">'+l.id+'</div>'
       +'<div class="loc-card-body"><h4>'+l.name+'</h4>'
       +'<div class="loc-days">'+l.days+'</div>'
@@ -93,4 +120,6 @@
       +'</div></div>';
     grid.appendChild(c);
   });
-})();
+  
+  console.log('Tarjetas de ubicación cargadas correctamente:', locs.length);
+});
