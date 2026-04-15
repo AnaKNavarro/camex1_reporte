@@ -28,6 +28,7 @@ body {
   position: relative;
   height: 100vh;
   overflow: hidden;
+  pointer-events: none;
 }
 
 .hero-background {
@@ -39,6 +40,7 @@ body {
   background: linear-gradient(160deg, var(--navy) 0%, #0d3a6a 40%, var(--slate) 100%);
   z-index: 1;
   transition: opacity 0.3s ease;
+  pointer-events: none;
 }
 
 .hero-background::before {
@@ -67,6 +69,7 @@ body {
   flex-direction: column;
   justify-content: flex-end;
   padding: 4rem 5vw 5rem;
+  pointer-events: auto;
 }
 
 .hero-badge {
@@ -138,6 +141,7 @@ body {
   z-index: 3;
   opacity: 0;
   animation: fadeUp 0.8s ease-out 1s forwards, bounce 2s ease-in-out 1.5s infinite;
+  pointer-events: auto;
 }
 
 .scroll-indicator svg {

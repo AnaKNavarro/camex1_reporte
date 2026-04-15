@@ -21,7 +21,9 @@
 })();
 
 // Location cards functionality
-document.addEventListener('DOMContentLoaded', function(){
+window.addEventListener('load', function(){
+  console.log('Iniciando carga de tarjetas de ubicación...');
+  
   const locs=[
     {id:1,name:"Punta Arenas, Chile",lat:-53.1638,lng:-70.9171,color:"#A9CBB7",days:"Partida y regreso",desc:"Puerto base de la expedición. Postprocesamiento de muestras y coordinación logística con UMAG e INACH."},
     {id:2,name:"Pasaje de Drake",lat:-59.0,lng:-65.0,color:"#81B3D2",days:"Días 1–5 y 20–22",desc:"Travesía por las aguas más turbulentas del mundo. Regreso: tormenta con olas de 12 m durante 3 días."},
@@ -42,84 +44,128 @@ document.addEventListener('DOMContentLoaded', function(){
   const grid = document.getElementById('locCards');
   const toast = document.getElementById('toastMsg');
   
-  if (!grid || !toast) {
-    console.error('No se encontraron los elementos necesarios: locCards o toastMsg');
+  console.log('Grid element:', grid);
+  console.log('Toast element:', toast);
+  
+  if (!grid) {
+    console.error('ERROR: No se encontró el elemento con id="locCards"');
     return;
   }
   
-  let tt;
-  
-  function fmt(lat,lng){
-    return Math.abs(lat).toFixed(4)+'°S, '+Math.abs(lng).toFixed(4)+'°O';
+  if (!toast) {
+    console.error('ERROR: No se encontró el elemento con id="toastMsg"');
+    return;
   }
   
-  function dec(lat,lng){
-    return lat.toFixed(4)+', '+lng.toFixed(4);
+  let toastTimeout;
+  
+  function formatCoords(lat, lng) {
+    return Math.abs(lat).toFixed(4) + '°S, ' + Math.abs(lng).toFixed(4) + '°O';
   }
   
-  function cp(lat,lng,name){
-    var t=dec(lat,lng);
+  function getDecimalCoords(lat, lng) {
+    return lat.toFixed(4) + ', ' + lng.toFixed(4);
+  }
+  
+  function copyToClipboard(lat, lng, name) {
+    const coordText = getDecimalCoords(lat, lng);
+    console.log('Intentando copiar:', coordText);
     
+    // Método 1: Clipboard API moderna
     if (navigator.clipboard && navigator.clipboard.writeText) {
-      navigator.clipboard.writeText(t).then(function(){
-        showT(name,t);
-      }).catch(function(err){
-        console.error('Error al copiar con clipboard API:', err);
-        fallbackCopy(t, name);
-      });
+      navigator.clipboard.writeText(coordText)
+        .then(function() {
+          console.log('Copiado exitosamente con Clipboard API');
+          showToast(name, coordText);
+        })
+        .catch(function(err) {
+          console.warn('Clipboard API falló, usando método alternativo:', err);
+          fallbackCopy(coordText, name);
+        });
     } else {
-      fallbackCopy(t, name);
+      console.log('Clipboard API no disponible, usando método alternativo');
+      fallbackCopy(coordText, name);
     }
   }
   
   function fallbackCopy(text, name) {
-    var a = document.createElement('textarea');
-    a.value = text;
-    a.style.position = 'fixed';
-    a.style.top = '0';
-    a.style.left = '0';
-    a.style.opacity = '0';
-    document.body.appendChild(a);
-    a.focus();
-    a.select();
+    const textarea = document.createElement('textarea');
+    textarea.value = text;
+    // Prevent scrolling to bottom of page in MS Edge.
+    textarea.style.position = 'fixed';
+    textarea.style.top = '0';
+    textarea.style.left = '0';
+    // Ensure it has a small width and height. Setting to 1px / 1em
+    // doesn't work as this gives a negative w/h on some browsers.
+    textarea.style.width = '2rem';
+    textarea.style.height = '2rem';
+    // We don't need padding, reducing the size if it does flash render.
+    textarea.style.padding = '0';
+    // Clean up any borders.
+    textarea.style.border = 'none';
+    textarea.style.outline = 'none';
+    textarea.style.boxShadow = 'none';
+    // Avoid flash of white box if rendered for any reason.
+    textarea.style.background = 'transparent';
+    
+    document.body.appendChild(textarea);
+    textarea.focus();
+    textarea.select();
+    
     try {
-      document.execCommand('copy');
-      showT(name, text);
-    } catch(err) {
+      const successful = document.execCommand('copy');
+      if (successful) {
+        console.log('Copiado exitosamente con execCommand');
+        showToast(name, text);
+      } else {
+        console.error('execCommand copy falló');
+        alert('No se pudo copiar automáticamente. Coordenadas: ' + text);
+      }
+    } catch (err) {
       console.error('Error al copiar:', err);
       alert('No se pudo copiar. Coordenadas: ' + text);
     }
-    document.body.removeChild(a);
+    
+    document.body.removeChild(textarea);
   }
   
-  function showT(n,t){
-    toast.textContent='📋 '+n+' — '+t+' copiado';
+  function showToast(name, coords) {
+    console.log('Mostrando toast:', name, coords);
+    toast.textContent = '📋 ' + name + ' — ' + coords + ' copiado';
     toast.classList.add('show');
-    clearTimeout(tt);
-    tt=setTimeout(function(){
+    clearTimeout(toastTimeout);
+    toastTimeout = setTimeout(function() {
       toast.classList.remove('show');
-    },2200);
+    }, 2200);
   }
   
-  locs.forEach(function(l){
-    var c=document.createElement('div');
-    c.className='loc-card-item';
-    c.onclick=function(e){
+  // Crear las tarjetas
+  locs.forEach(function(location) {
+    const card = document.createElement('div');
+    card.className = 'loc-card-item';
+    card.style.cursor = 'pointer';
+    
+    // Usar onclick en lugar de addEventListener para evitar problemas
+    card.onclick = function(e) {
       e.preventDefault();
-      cp(l.lat,l.lng,l.name);
+      e.stopPropagation();
+      console.log('🖱️ Click en tarjeta:', location.name);
+      copyToClipboard(location.lat, location.lng, location.name);
+      return false;
     };
-    c.style.cursor = 'pointer';
-    c.innerHTML='<div class="loc-card-num" style="background:'+l.color+'">'+l.id+'</div>'
-      +'<div class="loc-card-body"><h4>'+l.name+'</h4>'
-      +'<div class="loc-days">'+l.days+'</div>'
-      +'<div class="loc-desc">'+l.desc+'</div>'
-      +'<div class="coord-row">'
-      +'<svg class="coord-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>'
-      +'<span class="coord-text">'+fmt(l.lat,l.lng)+'</span>'
-      +'<span class="coord-copy">Copiar</span>'
-      +'</div></div>';
-    grid.appendChild(c);
+    
+    card.innerHTML = '<div class="loc-card-num" style="background:' + location.color + '">' + location.id + '</div>'
+      + '<div class="loc-card-body"><h4>' + location.name + '</h4>'
+      + '<div class="loc-days">' + location.days + '</div>'
+      + '<div class="loc-desc">' + location.desc + '</div>'
+      + '<div class="coord-row">'
+      + '<svg class="coord-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>'
+      + '<span class="coord-text">' + formatCoords(location.lat, location.lng) + '</span>'
+      + '<span class="coord-copy">Copiar</span>'
+      + '</div></div>';
+    
+    grid.appendChild(card);
   });
   
-  console.log('Tarjetas de ubicación cargadas correctamente:', locs.length);
+  console.log('✅ Tarjetas de ubicación cargadas correctamente:', locs.length);
 });
