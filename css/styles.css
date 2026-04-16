@@ -172,6 +172,16 @@ img#amea-head {
     right: 5%;
   }
 }
+@media (max-height: 550px) {
+  img#amea-head {
+    width: 200px;
+  }
+}
+@media (max-height: 700px) {
+  img#amea-head {
+    width: 300px;
+  }
+}
 
 .scroll-indicator {
   position: absolute;
