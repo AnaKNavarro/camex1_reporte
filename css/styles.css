@@ -172,6 +172,16 @@ img#amea-head {
     right: 5%;
   }
 }
+@media (max-height: 550px) {
+  img#amea-head {
+    width: 200px;
+  }
+}
+@media (max-height: 700px) {
+  img#amea-head {
+    width: 300px;
+  }
+}
 
 .scroll-indicator {
   position: absolute;
@@ -435,7 +445,7 @@ div[class="photo-placeholder"] img {
 /* ── TIMELINE ── */
 .timeline {
   position: relative;
-  padding-left: 2.5rem;
+  padding-left: 2.2rem;
   margin-top: 2.5rem;
 }
 
@@ -443,7 +453,7 @@ div[class="photo-placeholder"] img {
   content: "";
   position: absolute;
   left: 0;
-  top: 0;
+  top: 5px;
   bottom: 0;
   width: 3px;
   background: linear-gradient(to bottom, var(--ice-blue), var(--sage));
@@ -631,6 +641,7 @@ div[class="photo-placeholder"] img {
   grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
   gap: 1rem;
   margin-top: 2rem;
+  margin-bottom: 2.5rem;
 }
 
 .scientist {
