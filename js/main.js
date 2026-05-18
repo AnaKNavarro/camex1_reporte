@@ -2,15 +2,15 @@
 (function() {
   const heroBackground = document.querySelector('.hero-background');
   const heroContent = document.querySelector('.hero-content');
-  
+
   if (heroBackground && heroContent) {
     window.addEventListener('scroll', function() {
       const scrolled = window.pageYOffset;
       const heroHeight = window.innerHeight;
-      
+
       // Calculate opacity based on scroll position
       const opacity = 1 - (scrolled / heroHeight);
-      
+
       if (scrolled < heroHeight) {
         heroBackground.style.opacity = opacity;
         heroContent.style.opacity = opacity;
@@ -22,8 +22,6 @@
 
 // Location cards functionality
 window.addEventListener('load', function(){
-  console.log('Iniciando carga de tarjetas de ubicación...');
-  
   const locs=[
     {id:1,name:"Punta Arenas, Chile",lat:-53.1638,lng:-70.9171,color:"#A9CBB7",days:"Partida y regreso",desc:"Puerto base de la expedición. Postprocesamiento de muestras y coordinación logística con UMAG e INACH."},
     {id:2,name:"Pasaje de Drake",lat:-59.0,lng:-65.0,color:"#81B3D2",days:"Días 1–5 y 20–22",desc:"Travesía por las aguas más turbulentas del mundo. Regreso: tormenta con olas de 12 m durante 3 días."},
@@ -40,97 +38,71 @@ window.addEventListener('load', function(){
     {id:13,name:"Bahía Margarita (Círculo Polar Antártico)",lat:-68.000,lng:-68.500,color:"#E5956B",days:"Días 14–18",desc:"Cruce del Círculo Polar. Punto más al sur alcanzado por la expedición."},
     {id:14,name:"Estrecho de Penola",lat:-65.200,lng:-64.220,color:"#81B3D2",days:"Día 19",desc:"Último día de muestreo. CTD, Bongo, Draga, Arrastre y Multicorer a 337 m."}
   ];
-  
+
   const grid = document.getElementById('locCards');
   const toast = document.getElementById('toastMsg');
-  
-  console.log('Grid element:', grid);
-  console.log('Toast element:', toast);
-  
-  if (!grid) {
-    console.error('ERROR: No se encontró el elemento con id="locCards"');
-    return;
-  }
-  
-  if (!toast) {
-    console.error('ERROR: No se encontró el elemento con id="toastMsg"');
-    return;
-  }
-  
+
+  if (!grid || !toast) return;
+
   let toastTimeout;
-  
+
   function formatCoords(lat, lng) {
     return Math.abs(lat).toFixed(4) + '°S, ' + Math.abs(lng).toFixed(4) + '°O';
   }
-  
+
   function getDecimalCoords(lat, lng) {
     return lat.toFixed(4) + ', ' + lng.toFixed(4);
   }
-  
+
   function copyToClipboard(lat, lng, name) {
     const coordText = getDecimalCoords(lat, lng);
-    console.log('Intentando copiar:', coordText);
-    
-    // Método 1: Clipboard API moderna
+
     if (navigator.clipboard && navigator.clipboard.writeText) {
       navigator.clipboard.writeText(coordText)
         .then(function() {
-          console.log('Copiado exitosamente con Clipboard API');
           showToast(name, coordText);
         })
-        .catch(function(err) {
-          console.warn('Clipboard API falló, usando método alternativo:', err);
+        .catch(function() {
           fallbackCopy(coordText, name);
         });
     } else {
-      console.log('Clipboard API no disponible, usando método alternativo');
       fallbackCopy(coordText, name);
     }
   }
-  
+
   function fallbackCopy(text, name) {
     const textarea = document.createElement('textarea');
     textarea.value = text;
-    // Prevent scrolling to bottom of page in MS Edge.
     textarea.style.position = 'fixed';
     textarea.style.top = '0';
     textarea.style.left = '0';
-    // Ensure it has a small width and height. Setting to 1px / 1em
-    // doesn't work as this gives a negative w/h on some browsers.
     textarea.style.width = '2rem';
     textarea.style.height = '2rem';
-    // We don't need padding, reducing the size if it does flash render.
     textarea.style.padding = '0';
-    // Clean up any borders.
     textarea.style.border = 'none';
     textarea.style.outline = 'none';
     textarea.style.boxShadow = 'none';
-    // Avoid flash of white box if rendered for any reason.
     textarea.style.background = 'transparent';
-    
+
     document.body.appendChild(textarea);
     textarea.focus();
     textarea.select();
-    
+
     try {
       const successful = document.execCommand('copy');
       if (successful) {
-        console.log('Copiado exitosamente con execCommand');
         showToast(name, text);
       } else {
-        console.error('execCommand copy falló');
         alert('No se pudo copiar automáticamente. Coordenadas: ' + text);
       }
     } catch (err) {
-      console.error('Error al copiar:', err);
       alert('No se pudo copiar. Coordenadas: ' + text);
     }
-    
+
     document.body.removeChild(textarea);
   }
-  
+
   function showToast(name, coords) {
-    console.log('Mostrando toast:', name, coords);
     toast.textContent = '📋 ' + name + ' — ' + coords + ' copiado';
     toast.classList.add('show');
     clearTimeout(toastTimeout);
@@ -138,22 +110,19 @@ window.addEventListener('load', function(){
       toast.classList.remove('show');
     }, 2200);
   }
-  
-  // Crear las tarjetas
+
   locs.forEach(function(location) {
     const card = document.createElement('div');
     card.className = 'loc-card-item';
     card.style.cursor = 'pointer';
-    
-    // Usar onclick en lugar de addEventListener para evitar problemas
+
     card.onclick = function(e) {
       e.preventDefault();
       e.stopPropagation();
-      console.log('🖱️ Click en tarjeta:', location.name);
       copyToClipboard(location.lat, location.lng, location.name);
       return false;
     };
-    
+
     card.innerHTML = '<div class="loc-card-num" style="background:' + location.color + '">' + location.id + '</div>'
       + '<div class="loc-card-body"><h4>' + location.name + '</h4>'
       + '<div class="loc-days">' + location.days + '</div>'
@@ -163,9 +132,7 @@ window.addEventListener('load', function(){
       + '<span class="coord-text">' + formatCoords(location.lat, location.lng) + '</span>'
       + '<span class="coord-copy">Copiar</span>'
       + '</div></div>';
-    
+
     grid.appendChild(card);
   });
-  
-  console.log('✅ Tarjetas de ubicación cargadas correctamente:', locs.length);
 });
