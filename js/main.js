@@ -4,21 +4,132 @@
   const heroContent = document.querySelector('.hero-content');
 
   if (heroBackground && heroContent) {
-    window.addEventListener('scroll', function() {
+    const updateHero = function() {
       const scrolled = window.pageYOffset;
       const heroHeight = window.innerHeight;
 
-      // Calculate opacity based on scroll position
-      const opacity = 1 - (scrolled / heroHeight);
-
       if (scrolled < heroHeight) {
+        const opacity = 1 - (scrolled / heroHeight);
         heroBackground.style.opacity = opacity;
         heroContent.style.opacity = opacity;
         heroContent.style.transform = `translateY(${scrolled * 0.5}px)`;
+      } else {
+        heroBackground.style.opacity = 0;
+        heroContent.style.opacity = 0;
       }
-    });
+    };
+
+    window.addEventListener('scroll', updateHero);
+    // Call once on load to ensure correct state if page is reloaded halfway down
+    updateHero();
   }
 })();
+
+// Mobile navigation and scroll enhancements
+document.addEventListener('DOMContentLoaded', function() {
+  const navToggle = document.getElementById('navToggle');
+  const navLinks = document.getElementById('navLinks');
+  const backToTop = document.getElementById('backToTop');
+  const sections = document.querySelectorAll('section');
+  const navLinksArray = document.querySelectorAll('.nav-links a');
+
+  // Toggle mobile menu
+  if (navToggle && navLinks) {
+    navToggle.addEventListener('click', function() {
+      const isExpanded = navToggle.getAttribute('aria-expanded') === 'true';
+      navToggle.setAttribute('aria-expanded', !isExpanded);
+      navToggle.classList.toggle('open');
+      navLinks.classList.toggle('open');
+    });
+
+    // Close menu when a link is clicked
+    navLinks.querySelectorAll('a').forEach(link => {
+      link.addEventListener('click', () => {
+        navToggle.setAttribute('aria-expanded', 'false');
+        navToggle.classList.remove('open');
+        navLinks.classList.remove('open');
+      });
+    });
+  }
+
+  // Active link highlighting & Entry Animations via IntersectionObserver
+  if ('IntersectionObserver' in window) {
+    // 1. Highlight current section in nav
+    const navObserverOptions = {
+      root: null,
+      rootMargin: '-30% 0px -60% 0px', // focused in the upper-middle of viewport
+      threshold: 0
+    };
+
+    const navObserver = new IntersectionObserver(function(entries) {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          const id = entry.target.getAttribute('id');
+          navLinksArray.forEach(link => {
+            if (link.getAttribute('href') === `#${id}`) {
+              link.classList.add('active');
+            } else {
+              link.classList.remove('active');
+            }
+          });
+        }
+      });
+    }, navObserverOptions);
+
+    sections.forEach(section => {
+      navObserver.observe(section);
+    });
+
+    // 2. Entry animations — safe against scroll restoration
+    //    Strategy: wait for browser layout + scroll restoration to settle,
+    //    then only hide elements that are genuinely below the viewport.
+    //    Elements already visible are never hidden.
+    const setupAnimations = function() {
+      const animObserver = new IntersectionObserver(function(entries, observer) {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('in-view');
+            observer.unobserve(entry.target);
+          }
+        });
+      }, { root: null, rootMargin: '0px 0px -5% 0px', threshold: 0.01 });
+
+      document.querySelectorAll('.animate').forEach(el => {
+        const rect = el.getBoundingClientRect();
+        if (rect.top >= window.innerHeight) {
+          // Element is below the viewport — set up animation
+          el.classList.add('will-animate');
+          animObserver.observe(el);
+        }
+        // Elements in or above viewport: left alone (already visible)
+      });
+    };
+
+    // Double requestAnimationFrame ensures the browser has painted
+    // AND restored scroll position before we check element positions
+    requestAnimationFrame(function() {
+      requestAnimationFrame(setupAnimations);
+    });
+  }
+
+  // Back to Top visibility toggle
+  if (backToTop) {
+    window.addEventListener('scroll', function() {
+      if (window.scrollY > 500) {
+        backToTop.classList.add('show');
+      } else {
+        backToTop.classList.remove('show');
+      }
+    });
+
+    backToTop.addEventListener('click', function() {
+      window.scrollTo({
+        top: 0,
+        behavior: 'smooth'
+      });
+    });
+  }
+});
 
 // Location cards functionality
 window.addEventListener('load', function(){
